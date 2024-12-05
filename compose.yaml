@@ -1,0 +1,13 @@
+services:
+  patient-analytics:
+    build: .
+    image: patient-analytics:latest
+    restart: on-failure
+    ports:
+      - "8084:8084"
+    networks:
+      - springboot-network
+
+networks:
+  springboot-network:
+    external: true
