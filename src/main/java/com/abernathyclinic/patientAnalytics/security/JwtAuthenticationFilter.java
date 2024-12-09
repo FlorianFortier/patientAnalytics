@@ -5,7 +5,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -52,25 +54,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String jwt = authHeader.substring(7);
-        if (jwtService.isTokenValid(jwt)) {
-            String username = jwtService.extractUsername(jwt);
-            // Add authentication to the security context
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(username, null, List.of()); // Add roles if necessary
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-        } else {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+        final String token = authHeader.substring(7);
+        if (jwtService.isTokenValid(token)) {
+            String username = jwtService.extractUsername(token);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    username, null, List.of(new SimpleGrantedAuthority("ROLE_Organizer")) // Adjust roles if necessary
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-
         filterChain.doFilter(request, response);
     }
-
 }
